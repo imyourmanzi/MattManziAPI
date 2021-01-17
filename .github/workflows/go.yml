@@ -10,7 +10,7 @@ jobs:
 
   build:
     environment: staging
-    runs-on: {{ secrets.SERVER_OS }}
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v2
