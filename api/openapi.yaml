@@ -1,0 +1,47 @@
+openapi: "3.0.3"
+info:
+  title: MattManzi.com API
+  description: "My personal website's API."
+  version: "1.0"
+  contact:
+    name: "Matt Manzi"
+    url: "https://github.com/imyourmanzi"
+    email: "webmaster@api.mattmanzi.com"
+  license:
+    name: "All Rights Reserved."
+servers:
+  - url: "https://api.mattmanzi.com/rest/1.0/"
+    description: "Production"
+  - url: "https://api.staging-mattmanzi.com/rest/1.0/"
+    description: "Staging"
+paths:
+  /version:
+    get:
+      tags:
+        - "API Information"
+      summary: "Retrieve the currently-running API's version string"
+      description: "Determine which version of the API you're calling.  The version string uses semantic versioning and is updated with every code change in the API."
+      operationId: APIVersion
+      # externalDocs:
+      # parameters:
+      responses:
+        200:
+          description: "Successfully retrieved the version string"
+          content:
+            application/json:
+              schema:
+                title: "Version String"
+                type: "object"
+                properties:
+                  version:
+                    type: "string"
+                    example: "0.1.0"
+                    description: "Semantic version string"
+      # deprecated:
+      # security:
+      # servers:
+      # requestBody:
+      # callbacks:
+
+tags:
+  - name: "API Information"
