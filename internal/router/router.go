@@ -2,6 +2,7 @@
 package router
 
 import (
+	"bytes"
 	"fmt"
 	"time"
 
@@ -13,9 +14,17 @@ import (
 // The shared router instance.
 var r *gin.Engine
 
+// A buffer that can be used to read log output when Gin is running in TestMode.
+var testModeOutputBuffer bytes.Buffer
+
 // ginLogger defines the middleware for custom Gin router engine logging.
 func ginLogger() gin.HandlerFunc {
 	var ginLog = logger.New()
+
+	if gin.Mode() == gin.TestMode {
+		ginLog.Logger.SetOutput(&testModeOutputBuffer)
+		ginLog.WithField("mode", gin.Mode()).Info("Gin is running")
+	}
 
 	return func(c *gin.Context) {
 		// start timer
@@ -55,7 +64,7 @@ func ginLogger() gin.HandlerFunc {
 	}
 }
 
-// New creates a new Gin Engine with custom logging and the Gin Recovery
+// New creates a new Gin engine with custom logging and the Gin Recovery
 // middleware attached.
 func New() *gin.Engine {
 	if r != nil {
