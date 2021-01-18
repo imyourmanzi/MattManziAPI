@@ -23,6 +23,12 @@ vars:
 	@echo "BUILD_TARGET_OS=$(BUILD_TARGET_OS)"
 	@echo "BUILD_TARGET_ARCH=$(BUILD_TARGET_ARCH)"
 
+# run cmds in order
+# not perfect because if there were more you'd be stuck
+# but I only have for now so ¯\_(ツ)_/¯
+run:
+	-@go run $(CMD)/main.go
+
 # build binaries
 build: $(BIN)
 
