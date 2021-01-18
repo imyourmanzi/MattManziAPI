@@ -1,15 +1,19 @@
+// Package logger defines and delivers a custom Logrus logger.
 package logger
 
 import (
 	"os"
 
+	"github.com/imyourmanzi/MattManziAPI/internal/environment"
+
 	"github.com/sirupsen/logrus"
 )
 
+// The shared logger instance, made accessible through this log entry.
 var baseLogEntry *logrus.Entry
 
-// NewLogger instantiates and sets up the Log.
-func NewLogger() *logrus.Entry {
+// New instantiates and sets up the Log.
+func New() *logrus.Entry {
 	if baseLogEntry != nil {
 		return baseLogEntry
 	}
@@ -21,16 +25,10 @@ func NewLogger() *logrus.Entry {
 	// set output
 	log.SetOutput(os.Stdout)
 
-	// get the environment we're running in
-	env, set := os.LookupEnv("MM_ENVIRONMENT")
-	if !set {
-		env = "local"
-	}
-
 	// provide a base entry from which logs can be generated
 	baseLogEntry = log.WithFields(logrus.Fields{
 		"service":     "mattmanziapi",
-		"environment": env,
+		"environment": environment.MMEnvironment(),
 	})
 	return baseLogEntry
 }
