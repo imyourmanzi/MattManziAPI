@@ -35,24 +35,10 @@ func Verbosity() logrus.Level {
 		return logrus.InfoLevel
 	}
 
-	switch levelString {
-	case "trace":
-		return logrus.TraceLevel
-	case "debug":
-		return logrus.DebugLevel
-	case "info":
-		return logrus.InfoLevel
-	case "warn":
-		return logrus.WarnLevel
-	case "error":
-		return logrus.ErrorLevel
-	case "critical":
-		return logrus.FatalLevel
-	case "fatal":
-		return logrus.FatalLevel
-	case "panic":
-		return logrus.PanicLevel
-	default:
+	level, err := logrus.ParseLevel(levelString)
+	if err != nil {
 		return logrus.InfoLevel
 	}
+
+	return level
 }
