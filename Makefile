@@ -41,7 +41,7 @@ $(BIN):
 test: every-test
 
 every-test:
-	-@go test ./...
+	@go test ./...
 
 # clean up the repo and resources
 clean: bin-clean test-clean
