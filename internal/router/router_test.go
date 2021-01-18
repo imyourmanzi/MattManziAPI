@@ -8,7 +8,7 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	want := regexp.MustCompile(`^\{(".*":.*)+\}\n+$`)
+	want := regexp.MustCompile(`^(\{(".*":.*)+\}\n)+$`)
 
 	// setup router
 	gin.SetMode(gin.TestMode)

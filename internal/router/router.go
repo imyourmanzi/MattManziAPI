@@ -25,6 +25,7 @@ func ginLogger() gin.HandlerFunc {
 
 	if gin.Mode() == gin.TestMode {
 		ginLog.Logger.SetOutput(&testModeOutputBuffer)
+		ginLog.Logger.SetLevel(logrus.InfoLevel)
 		ginLog.WithField("mode", gin.Mode()).Info("Gin is running")
 	}
 
