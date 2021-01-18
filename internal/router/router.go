@@ -11,6 +11,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+var log = logger.New()
+
 // The shared router instance.
 var r *gin.Engine
 
@@ -68,6 +70,7 @@ func ginLogger() gin.HandlerFunc {
 // middleware attached.
 func New() *gin.Engine {
 	if r != nil {
+		log.Warn("New router requested, but one already exists, returing it")
 		return r
 	}
 
@@ -77,5 +80,6 @@ func New() *gin.Engine {
 	r.Use(ginLogger())
 	r.Use(gin.Recovery())
 
+	log.Info("Initialized new router")
 	return r
 }

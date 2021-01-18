@@ -19,6 +19,6 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"version": "0.1.0"})
 	})
 
-	log.Println("Starting API...")
 	r.Run("localhost:8080")
+	log.Println("Started router engine, API is ready")
 }

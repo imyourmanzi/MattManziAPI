@@ -15,6 +15,7 @@ var baseLogEntry *logrus.Entry
 // New instantiates and sets up the Log.
 func New() *logrus.Entry {
 	if baseLogEntry != nil {
+		baseLogEntry.Debug("New logger requested, but one already exists, returing it")
 		return baseLogEntry
 	}
 
@@ -30,5 +31,7 @@ func New() *logrus.Entry {
 		"service":     "mattmanziapi",
 		"environment": environment.MMEnvironment(),
 	})
+
+	baseLogEntry.Info("Initialized new logger")
 	return baseLogEntry
 }
