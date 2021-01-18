@@ -38,8 +38,10 @@ $(BIN):
 	go build -o $(BIN) $(CMD)/main.go
 
 # run golang tests
-test:
-	go test $(CMD)
+test: test-all
+
+test-all:
+	go test ./...
 
 # clean up the repo and resources
 clean: bin-clean
