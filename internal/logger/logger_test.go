@@ -10,7 +10,7 @@ import (
 func TestNew(t *testing.T) {
 	// expected output must match
 	msg := `It works!`
-	logFormat := `^\{"environment":".+","level":"%s","msg":"` + msg + `","service":"mattmanziapi","time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}([+-]?\d{2}:?\d{2})?"\}\n+$`
+	logFormat := `^\{"environment":".+","level":"%s","msg":"` + msg + `","service":"mattmanziapi","time":"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}([+-]?\d{2}:?\d{2}|Z)?"\}\n+$`
 	var want *regexp.Regexp
 
 	// setup logger output capture
