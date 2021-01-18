@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -35,13 +36,14 @@ func ginLogger() gin.HandlerFunc {
 		errorMessage := c.Errors.ByType(gin.ErrorTypePrivate).String()
 
 		finalLog := ginLog.WithFields(logrus.Fields{
-			"datetime": stop,
-			"latency":  latency,
-			"remoteIP": c.ClientIP(),
-			"method":   c.Request.Method,
-			"status":   c.Writer.Status(),
-			"size":     c.Writer.Size(),
-			"path":     path,
+			"datetime":      stop,
+			"latency":       latency,
+			"latencyPretty": fmt.Sprintf("%v", latency),
+			"remoteIP":      c.ClientIP(),
+			"method":        c.Request.Method,
+			"status":        c.Writer.Status(),
+			"size":          c.Writer.Size(),
+			"path":          path,
 		})
 
 		if errorMessage != "" {
