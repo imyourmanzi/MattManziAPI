@@ -21,7 +21,16 @@ func NewLogger() *logrus.Entry {
 	// set output
 	log.SetOutput(os.Stdout)
 
+	// get the environment we're running in
+	env, set := os.LookupEnv("MM_ENVIRONMENT")
+	if !set {
+		env = "local"
+	}
+
 	// provide a base entry from which logs can be generated
-	baseLogEntry = log.WithField("service", "mattmanziapi")
+	baseLogEntry = log.WithFields(logrus.Fields{
+		"service":     "mattmanziapi",
+		"environment": env,
+	})
 	return baseLogEntry
 }
