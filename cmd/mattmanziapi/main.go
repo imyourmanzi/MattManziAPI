@@ -11,10 +11,10 @@ import (
 	"github.com/imyourmanzi/MattManziAPI/internal/logger"
 )
 
-var log = logger.NewLogger("main")
+var log = logger.NewLogger()
 
 func ginLogger() gin.HandlerFunc {
-	var ginLog = logger.NewLogger("gin")
+	var ginLog = logger.NewLogger()
 
 	return func(c *gin.Context) {
 		// start timer
@@ -55,16 +55,16 @@ func ginLogger() gin.HandlerFunc {
 }
 
 func main() {
-	log.Println("Starting API...")
 	r := gin.New()
 
+	// install middleware
 	r.Use(ginLogger())
-
 	r.Use(gin.Recovery())
 
 	r.GET("/version", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"version": "0.1.0"})
 	})
 
+	log.Println("Starting API...")
 	r.Run("localhost:8080")
 }

@@ -9,7 +9,7 @@ import (
 var baseLogEntry *logrus.Entry
 
 // NewLogger instantiates and sets up the Log.
-func NewLogger(pkg string) *logrus.Entry {
+func NewLogger() *logrus.Entry {
 	if baseLogEntry != nil {
 		return baseLogEntry
 	}
