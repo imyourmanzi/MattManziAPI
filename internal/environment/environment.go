@@ -2,11 +2,19 @@
 // environment.
 package environment
 
-import "os"
+import (
+	"os"
+
+	"github.com/sirupsen/logrus"
+)
 
 // EnvMMEnvironment is the name of the environment variable for the API's
 // running environment.
 const EnvMMEnvironment = "MM_ENVIRONMENT"
+
+// EnvVerbosity is the name of the environment variable indicating the API's
+// verbosity of logging.
+const EnvVerbosity = "MM_VERBOSITY"
 
 // MMEnvironment returns the environment we're running in, but defaults to
 // "local".
@@ -17,4 +25,34 @@ func MMEnvironment() string {
 	}
 
 	return env
+}
+
+// Verbosity returns the corresponding Logrus Level to the value set in the
+// running environment.
+func Verbosity() logrus.Level {
+	levelString, set := os.LookupEnv(EnvVerbosity)
+	if !set {
+		return logrus.InfoLevel
+	}
+
+	switch levelString {
+	case "trace":
+		return logrus.TraceLevel
+	case "debug":
+		return logrus.DebugLevel
+	case "info":
+		return logrus.InfoLevel
+	case "warn":
+		return logrus.WarnLevel
+	case "error":
+		return logrus.ErrorLevel
+	case "critical":
+		return logrus.FatalLevel
+	case "fatal":
+		return logrus.FatalLevel
+	case "panic":
+		return logrus.PanicLevel
+	default:
+		return logrus.InfoLevel
+	}
 }

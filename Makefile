@@ -18,6 +18,8 @@ BIN := $(CMD:$(CMD_DIR)%=$(BIN_DIR)%)
 
 # debugging the makefile
 vars:
+	@echo "CMD_DIR=$(CMD_DIR)"
+	@echo "BIN_DIR=$(BIN_DIR)"
 	@echo "CMD=$(CMD)"
 	@echo "BIN=$(BIN)"
 	@echo "BUILD_TARGET_OS=$(BUILD_TARGET_OS)"
@@ -27,7 +29,11 @@ vars:
 # not perfect because if there were more you'd be stuck
 # but I only have for now so ¯\_(ツ)_/¯
 run:
-	-@go run $(CMD)/main.go
+	@go run $(CMD)/main.go
+
+# run but with debug verbosity
+debug:
+	@MM_VERBOSITY=debug go run $(CMD)/main.go
 
 # build binaries
 build: $(BIN)
@@ -50,4 +56,4 @@ test-clean:
 	go clean -testcache
 
 bin-clean:
-	-rm -rf $(BIN_DIR)
+	rm -rf $(BIN_DIR)

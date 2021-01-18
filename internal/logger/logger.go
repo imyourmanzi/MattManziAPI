@@ -25,6 +25,7 @@ func New() *logrus.Entry {
 
 	// set output
 	log.SetOutput(os.Stdout)
+	log.SetLevel(environment.Verbosity())
 
 	// provide a base entry from which logs can be generated
 	baseLogEntry = log.WithFields(logrus.Fields{
@@ -32,6 +33,9 @@ func New() *logrus.Entry {
 		"environment": environment.MMEnvironment(),
 	})
 
-	baseLogEntry.Info("Initialized new logger")
+	baseLogEntry.WithFields(logrus.Fields{
+		"verbosity": log.GetLevel(),
+	}).Info("Initialized new logger")
+
 	return baseLogEntry
 }
