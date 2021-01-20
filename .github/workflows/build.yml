@@ -1,15 +1,13 @@
-name: Golang Build
+name: Application Test & Build
 
 on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
 
 jobs:
 
-  build:
-    environment: staging
+  testAndBuildApplication:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,6 +17,9 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: 1.15
+
+    - name: Print version
+      run: make version
 
     - name: Run unit tests
       run: make test

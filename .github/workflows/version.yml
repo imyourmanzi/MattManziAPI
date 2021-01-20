@@ -1,14 +1,12 @@
-name: Version Bump
+name: Deploy Application
 
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
 
 jobs:
 
-  versionbump:
+  bumpVersion:
     runs-on: ubuntu-latest
 
     steps:
@@ -25,3 +23,8 @@ jobs:
           [automated] bump version
 
           ${{ steps.version_bump.outputs.versions }}
+
+  # deployApplication:
+  #   environment: staging
+  #   needs: bumpVersion
+  #   runs-on: ubuntu-latest
