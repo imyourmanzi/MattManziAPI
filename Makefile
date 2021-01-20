@@ -12,14 +12,19 @@ BUILD_TARGET_ARCH = $(if $(GOARCH),$(GOARCH),$(shell go env GOARCH))
 
 CMD_DIR := ./cmd
 BIN_DIR := ./bin
+VERSION_DIR := ./internal/version
 
 CMD := $(CMD_DIR)/$(shell ls ./cmd/)
 BIN := $(CMD:$(CMD_DIR)%=$(BIN_DIR)%)
+VERSION := $(VERSION_DIR)/version.go
+
+VERSION_RE := ^(const[[:space:]]+VersionString[[:space:]]+=[[:space:]]+)"(([[:digit:]]+)\.([[:digit:]]+)\.([[:digit:]]+))"$$
 
 # debugging the makefile
 vars:
 	@echo "CMD_DIR=$(CMD_DIR)"
 	@echo "BIN_DIR=$(BIN_DIR)"
+	@echo "VERSION_DIR=$(VERSION_DIR)"
 	@echo "CMD=$(CMD)"
 	@echo "BIN=$(BIN)"
 	@echo "BUILD_TARGET_OS=$(BUILD_TARGET_OS)"
@@ -48,6 +53,36 @@ test: every-test
 
 every-test:
 	@go test ./...
+
+patch-version: $(VERSION)
+	@/bin/echo -n "Current verion:	"
+	@sed -nr 's/$(VERSION_RE)/\2/p' $(VERSION)
+	@$(eval patchv := $(shell sed -nr 's/$(VERSION_RE)/\5/p' $(VERSION)))
+	@$(eval newpatch := $(shell echo $(patchv)+1 | bc))
+	@sed -i.prev -r 's/$(VERSION_RE)/\1"\3.\4.$(newpatch)"/' $(VERSION)
+	@/bin/echo -n "New verion:	"
+	@sed -nr 's/$(VERSION_RE)/\2/p' $(VERSION)
+	@rm $(VERSION).prev
+
+minor-version: $(VERSION)
+	@/bin/echo -n "Current verion:	"
+	@sed -nr 's/$(VERSION_RE)/\2/p' $(VERSION)
+	@$(eval minorv := $(shell sed -nr 's/$(VERSION_RE)/\4/p' $(VERSION)))
+	@$(eval newminor := $(shell echo $(minorv)+1 | bc))
+	@sed -i.prev -r 's/$(VERSION_RE)/\1"\3.$(newminor).0"/' $(VERSION)
+	@/bin/echo -n "New verion:	"
+	@sed -nr 's/$(VERSION_RE)/\2/p' $(VERSION)
+	@rm $(VERSION).prev
+
+major-version: $(VERSION)
+	@/bin/echo -n "Current verion:	"
+	@sed -nr 's/$(VERSION_RE)/\2/p' $(VERSION)
+	@$(eval majorv := $(shell sed -nr 's/$(VERSION_RE)/\3/p' $(VERSION)))
+	@$(eval newmajor := $(shell echo $(majorv)+1 | bc))
+	@sed -i.prev -r 's/$(VERSION_RE)/\1"$(newmajor).0.0"/' $(VERSION)
+	@/bin/echo -n "New verion:	"
+	@sed -nr 's/$(VERSION_RE)/\2/p' $(VERSION)
+	@rm $(VERSION).prev
 
 # clean up the repo and resources
 clean: bin-clean test-clean
