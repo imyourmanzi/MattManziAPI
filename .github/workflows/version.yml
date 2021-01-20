@@ -14,7 +14,7 @@ jobs:
 
     - name: Bump version patch number
       id: version_bump
-      run: echo "::set-output name=versions::$(make patch-version | tr '\n' '|')\n"
+      run: echo "::set-output name=versions::$(make patch-version)"
 
     - name: Commit version change
       uses: EndBug/add-and-commit@v7.0.0

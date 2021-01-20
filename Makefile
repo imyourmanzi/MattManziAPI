@@ -54,6 +54,10 @@ test: every-test
 every-test:
 	@go test ./...
 
+version: $(VERSION)
+	@/bin/echo -n "Verion:	"
+	@sed -nr 's/$(VERSION_RE)/\2/p' $(VERSION)
+
 patch-version: $(VERSION)
 	@/bin/echo -n "Current verion:	"
 	@sed -nr 's/$(VERSION_RE)/\2/p' $(VERSION)
