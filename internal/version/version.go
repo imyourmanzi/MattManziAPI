@@ -2,4 +2,4 @@
 package version
 
 // VersionString indicates the current semantic version of the project.
-const VersionString = "0.1.1"
+const VersionString = "0.1.2"
