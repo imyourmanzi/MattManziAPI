@@ -18,5 +18,10 @@
 # Executables
 /bin/
 
+# Local files for Docker-hosted MongoDB
+.srl
+/.local/x509/*
+!/.local/x509/*.conf
+
 # macOS files
 .DS_Store

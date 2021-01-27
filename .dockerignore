@@ -1,0 +1,13 @@
+# File: .dockerignore
+# Author: Matt Manzi
+# Created: 2021-01-26
+#
+# Ignore file for Docker in this project.
+
+# ignore everything
+*
+
+# except Docker-related files
+!Dockerfile
+!.local/mongo
+!.local/x509/*.pem
