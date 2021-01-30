@@ -1,0 +1,20 @@
+name: Check for TODOs
+
+on:
+  pull_request:
+
+jobs:
+
+  checkForTodos:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Find TODOs
+      run: |
+        (git diff origin/main HEAD --no-ext-diff --unified=0 --exit-code -a --no-prefix | egrep '^\+.*[tT][oO][dD][oO]') \
+        && echo 'You cannot merge PRs with TODOs' \
+        && exit 1
