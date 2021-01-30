@@ -1,13 +1,13 @@
-name: Test & Build Application
+name: Deploy Application
 
 on:
   push:
     branches: [ main ]
-  pull_request:
 
 jobs:
 
-  testAndBuildApplication:
+  deployApplication:
+    environment: staging
     runs-on: ubuntu-latest
 
     steps:
@@ -17,12 +17,6 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: 1.15
-
-      - name: Print version
-        run: make version
-
-      - name: Run unit tests
-        run: make test
 
       - name: Build binary
         run: make build
