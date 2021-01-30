@@ -6,26 +6,6 @@ on:
 
 jobs:
 
-  bumpVersion:
+  deployApplication:
+    environment: staging
     runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Bump version patch number
-      id: version_bump
-      run: echo "::set-output name=versions::$(make patch-version | tr '\n' '\t')"
-
-    - name: Commit version change
-      uses: EndBug/add-and-commit@v7.0.0
-      with:
-        push: origin main --force
-        message: |
-          [automated] bump version
-
-          ${{ steps.version_bump.outputs.versions }}
-
-  # deployApplication:
-  #   environment: staging
-  #   needs: bumpVersion
-  #   runs-on: ubuntu-latest
