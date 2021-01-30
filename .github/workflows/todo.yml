@@ -17,5 +17,5 @@ jobs:
         shell: bash
         run: |
           if git diff origin/main HEAD --no-ext-diff --unified=0 --exit-code -a --no-prefix ':!.github/workflows/todo.yml' | egrep '^\+.*[tT][oO][dD][oO]'; \
-          then echo 'OK!'; \
-          else echo 'You cannot merge PRs with TODOs'; exit 1; fi
+          then echo 'You cannot merge PRs with TODOs'; exit 1; \
+          else echo 'OK!'; fi
