@@ -14,11 +14,12 @@ jobs:
 
     - name: Bump version patch number
       id: version_bump
-      run: echo "::set-output name=versions::$(make patch-version)"
+      run: echo "::set-output name=versions::$(make patch-version | tr '\n' '\t')"
 
     - name: Commit version change
       uses: EndBug/add-and-commit@v7.0.0
       with:
+        push: origin main --force
         message: |
           [automated] bump version
 
