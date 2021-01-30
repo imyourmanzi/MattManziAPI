@@ -9,6 +9,9 @@
 set -e
 set -o pipefail
 
+echo "add_user.sh::CREATING USER PROFILE"
+openssl x509 -in /home/mongodb/tls/client.pem -inform PEM -subject -nameopt RFC2253 | head -n1 | sed -nr 's/^subject=[[:space:]]*(.*)$/\1/p' | tr -d "\n" > /home/mongodb/new_user
+
 # start a clean mongodb normally
 echo "add_user.sh::STARTING MONGO"
 mongod --dbpath="${MONGO_DBPATH}" --syslog &
@@ -33,4 +36,8 @@ done
 echo "add_user.sh::SHUTTING DOWN MONGO"
 mongod --dbpath="${MONGO_DBPATH}" --shutdown
 sleep 3
+
+echo "add_user.sh::CLEANING UP"
+rm /home/mongodb/new_user /home/mongodb/tls/client.pem $0
+
 echo "add_user.sh::CONTINUING"

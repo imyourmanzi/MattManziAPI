@@ -41,6 +41,7 @@ SERVER_PEM := $(SERVER_CNF:.conf=.pem)
 
 MONGO_CNF := $(MONGO_DIR)/mongo_conf.yml
 MONGO_USER_SCRIPT := $(MONGO_DIR)/add_user.sh
+MONGO_PORT := 27017
 
 DOCKER_IMAGE_NAME := apidb_image
 DOCKER_CONTAINER_NAME := $(DOCKER_IMAGE_NAME:%_image=%)
@@ -88,6 +89,7 @@ vars:
 	@echo
 	@echo 'MONGO_CNF := $(MONGO_CNF)'
 	@echo 'MONGO_USER_SCRIPT := $(MONGO_USER_SCRIPT)'
+	@echo 'MONGO_PORT := $(MONGO_PORT) # note: must match mongod config'
 
 	@echo
 	@echo 'DOCKER_IMAGE_NAME := $(DOCKER_IMAGE_NAME)'
@@ -143,16 +145,21 @@ rm-certs:
 .PHONY: new-db
 new-db: rm-db $(MONGO_CNF) $(MONGO_USER_SCRIPT) $(CA_PEM) $(SERVER_PEM) $(CLIENT_PEM) Dockerfile
 	@docker build -t $(DOCKER_IMAGE_NAME) .
-	@docker create -p 27017:27017/tcp --name $(DOCKER_CONTAINER_NAME) $(DOCKER_IMAGE_NAME) > /dev/null
+	@docker create -p $(MONGO_PORT):$(MONGO_PORT)/tcp --name $(DOCKER_CONTAINER_NAME) $(DOCKER_IMAGE_NAME) > /dev/null
 
 .PHONY: start-db
 start-db: new-db
 	@/bin/echo -n "Starting local database..."
 	@docker start $(DOCKER_CONTAINER_NAME) > /dev/null
+	@sleep 5
 	@echo "OK"
-# manually connecting to the database as the api user
-# from in container: mongo --tls --tlsCertificateKeyFile tls/client.pem --tlsCAFile tls/ca.pem --authenticationDatabase '$external' --authenticationMechanism MONGODB-X509 --host localhost:27017 mattmanzi_com
-# from host machine: mongo --tls --tlsCertificateKeyFile ./.local/x509/client.pem --tlsCAFile ./.local/x509/ca.pem --authenticationDatabase '$external' --authenticationMechanism MONGODB-X509 --host localhost:27017 mattmanzi_com
+
+# connect to the database as the api user
+# or from in container:
+# mongo --tls --tlsCertificateKeyFile tls/client.pem --tlsCAFile tls/ca.pem --authenticationDatabase '$external' --authenticationMechanism MONGODB-X509 --host localhost:27017 mattmanzi_com
+.PHONY: connect-db
+connect-db: start-db
+	@mongo --tls --tlsCertificateKeyFile $(CLIENT_PEM) --tlsCAFile $(CA_PEM) --authenticationDatabase '$$external' --authenticationMechanism MONGODB-X509 --host localhost:$(MONGO_PORT) mattmanzi_com
 
 .PHONY: stop-db
 stop-db:

@@ -16,7 +16,6 @@ RUN mkdir -p ${MONGO_DBPATH} && chown -R mongodb:mongodb ${MONGO_DBPATH}
 COPY ./.local/x509/ca.pem tls/ca.pem
 COPY ./.local/x509/server.pem tls/server.pem
 COPY ./.local/x509/client.pem tls/client.pem
-RUN openssl x509 -in tls/client.pem -inform PEM -subject -nameopt RFC2253 | head -n1 | sed -nr 's/^subject=[[:space:]]*(.*)$/\1/p' | tr -d "\n" > new_user
 
 # copy configuration and setup user
 COPY ./.local/mongo/mongo_conf.yml ./mongod.conf

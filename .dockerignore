@@ -7,7 +7,9 @@
 # ignore everything
 *
 
-# except Docker-related files
-!Dockerfile
+## except container-related files:
+# - mongo configuration
 !.local/mongo
+
+# - ca, server, client certificates
 !.local/x509/*.pem
