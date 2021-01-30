@@ -9,3 +9,10 @@ jobs:
   deployApplication:
     environment: staging
     runs-on: ubuntu-latest
+
+    steps:
+      - name: Build binary
+        run: make build
+        env:
+          GOOS: linux
+          GOARCH: amd64
