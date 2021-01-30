@@ -6,8 +6,6 @@
 # Inspiration from:
 # 	https://github.com/thockin/go-build-template/blob/master/Makefile
 
-# TODO: testing todo finder
-
 # users should set GOOS and/or GOARCH env variables when using recipes
 BUILD_TARGET_OS ?= $(shell go env GOOS)
 BUILD_TARGET_ARCH ?= $(shell go env GOARCH)
