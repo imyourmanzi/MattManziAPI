@@ -45,6 +45,8 @@ MONGO_PORT := 27017
 
 DOCKER_IMAGE_NAME := apidb_image
 DOCKER_CONTAINER_NAME := $(DOCKER_IMAGE_NAME:%_image=%)
+# implies the container and image both exist, does not guarantee state
+DOCKER_LOCK := $(LOCAL_DIR)/.dockermake.lock
 
 # debugging the makefile
 .PHONY: vars
@@ -94,6 +96,7 @@ vars:
 	@echo
 	@echo 'DOCKER_IMAGE_NAME := $(DOCKER_IMAGE_NAME)'
 	@echo 'DOCKER_CONTAINER_NAME := $(DOCKER_CONTAINER_NAME)'
+	@echo 'DOCKER_LOCK := $(DOCKER_LOCK)'
 
 # run but with debug verbosity
 .PHONY: debug
@@ -143,15 +146,16 @@ rm-certs:
 	rm -f .srl
 
 .PHONY: new-db
-new-db: rm-db $(MONGO_CNF) $(MONGO_USER_SCRIPT) $(CA_PEM) $(SERVER_PEM) $(CLIENT_PEM) Dockerfile
+new-db $(DOCKER_LOCK): $(MONGO_CNF) $(MONGO_USER_SCRIPT) $(CA_PEM) $(SERVER_PEM) $(CLIENT_PEM) Dockerfile
 	@docker build -t $(DOCKER_IMAGE_NAME) .
 	@docker create -p $(MONGO_PORT):$(MONGO_PORT)/tcp --name $(DOCKER_CONTAINER_NAME) $(DOCKER_IMAGE_NAME) > /dev/null
+	@touch $(DOCKER_LOCK)
 
 .PHONY: start-db
-start-db: new-db
+start-db: $(DOCKER_LOCK)
 	@/bin/echo -n "Starting local database..."
 	@docker start $(DOCKER_CONTAINER_NAME) > /dev/null
-	@sleep 5
+	@sleep 3
 	@echo "OK"
 
 # connect to the database as the api user
@@ -162,7 +166,7 @@ connect-db: start-db
 	@mongo --tls --tlsCertificateKeyFile $(CLIENT_PEM) --tlsCAFile $(CA_PEM) --authenticationDatabase '$$external' --authenticationMechanism MONGODB-X509 --host localhost:$(MONGO_PORT) mattmanzi_com
 
 .PHONY: stop-db
-stop-db:
+stop-db: $(DOCKER_LOCK)
 	@/bin/echo -n "Stopping local database..."
 	-@docker stop $(DOCKER_CONTAINER_NAME) > /dev/null
 	@echo "done"
@@ -171,6 +175,7 @@ stop-db:
 rm-db: stop-db
 	docker rm -f $(DOCKER_CONTAINER_NAME)
 	docker rmi -f $(DOCKER_IMAGE_NAME)
+	rm -f $(DOCKER_LOCK)
 
 # build binaries
 .PHONY: build

@@ -20,7 +20,8 @@
 
 # Local files for Docker-hosted MongoDB
 .srl
-/.local/x509/*
+/.local/
+!/.local/mongo/*
 !/.local/x509/*.conf
 
 # macOS files
