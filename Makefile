@@ -98,10 +98,14 @@ vars:
 	@echo 'DOCKER_CONTAINER_NAME := $(DOCKER_CONTAINER_NAME)'
 	@echo 'DOCKER_LOCK := $(DOCKER_LOCK)'
 
+
+################################################################################
+# Running the API
+
 # run but with debug verbosity
 .PHONY: debug
 debug:
-	@MM_VERBOSITY=debug $(MAKE) run
+	@MM_VERBOSITY=debug GODEBUG="x509ignoreCN=0" $(MAKE) run
 
 # locally run cmds in order
 # (not perfect because if there were more I'd be stuck but I only have for now)
@@ -110,6 +114,10 @@ run: start-db
 	@runCleanup () { \
 		$(MAKE) stop-db; \
 	}; trap runCleanup EXIT; go run $(CMD)/main.go
+
+
+################################################################################
+# Docker MongoDB x509 Certificates
 
 .PHONY: ca
 ca $(CA_KEY) $(CA_PEM): $(CA_CNF)
@@ -145,14 +153,31 @@ rm-certs:
 	cd $(CERT_DIR) && rm -f $(shell ls -1 $(CERT_DIR) | grep -v .conf)
 	rm -f .srl
 
+
+################################################################################
+# Docker MongoDB Management
+#
+# If `make start-db` fails even after a `make rm-db`, check if there are extra
+# Docker containers or images that are blocking this one but are not detected by
+# the Makefile.
+
 .PHONY: new-db
 new-db $(DOCKER_LOCK): $(MONGO_CNF) $(MONGO_USER_SCRIPT) $(CA_PEM) $(SERVER_PEM) $(CLIENT_PEM) Dockerfile
+	@if docker images --format '{{.Repository}}' | grep -q $(DOCKER_IMAGE_NAME); \
+	then \
+		$(MAKE) rm-db; \
+	fi
 	@docker build -t $(DOCKER_IMAGE_NAME) .
 	@docker create -p $(MONGO_PORT):$(MONGO_PORT)/tcp --name $(DOCKER_CONTAINER_NAME) $(DOCKER_IMAGE_NAME) > /dev/null
 	@touch $(DOCKER_LOCK)
 
 .PHONY: start-db
 start-db: $(DOCKER_LOCK)
+	@if docker container ls --format '{{.Names}}' | grep -q $(DOCKER_CONTAINER_NAME); \
+	then \
+		echo "Database already up"; \
+		exit 2; \
+	fi
 	@/bin/echo -n "Starting local database..."
 	@docker start $(DOCKER_CONTAINER_NAME) > /dev/null
 	@sleep 3
@@ -162,20 +187,28 @@ start-db: $(DOCKER_LOCK)
 # or from in container:
 # mongo --tls --tlsCertificateKeyFile tls/client.pem --tlsCAFile tls/ca.pem --authenticationDatabase '$external' --authenticationMechanism MONGODB-X509 --host localhost:27017 mattmanzi_com
 .PHONY: connect-db
-connect-db: start-db
+connect-db: $(DOCKER_LOCK)
 	@mongo --tls --tlsCertificateKeyFile $(CLIENT_PEM) --tlsCAFile $(CA_PEM) --authenticationDatabase '$$external' --authenticationMechanism MONGODB-X509 --host localhost:$(MONGO_PORT) mattmanzi_com
 
 .PHONY: stop-db
 stop-db: $(DOCKER_LOCK)
 	@/bin/echo -n "Stopping local database..."
-	-@docker stop $(DOCKER_CONTAINER_NAME) > /dev/null
+	-@docker stop $(DOCKER_CONTAINER_NAME) &> /dev/null
 	@echo "done"
 
 .PHONY: rm-db
-rm-db: stop-db
+rm-db:
+	@if docker container ls --format '{{.Names}}' | grep -q $(DOCKER_CONTAINER_NAME); \
+	then \
+		$(MAKE) stop-db; \
+	fi
 	docker rm -f $(DOCKER_CONTAINER_NAME)
 	docker rmi -f $(DOCKER_IMAGE_NAME)
 	rm -f $(DOCKER_LOCK)
+
+
+################################################################################
+# Managing Binaries
 
 # build binaries
 .PHONY: build
@@ -190,6 +223,9 @@ $(BIN):
 rm-bin:
 	rm -rf $(BIN_DIR)
 
+################################################################################
+# Testing
+
 # run golang tests
 .PHONY: test unit-tests
 test unit-tests:
@@ -201,6 +237,10 @@ test unit-tests:
 .PHONY: test-clean
 test-clean:
 	go clean -testcache
+
+
+################################################################################
+# Manage API Version
 
 .PHONY: version
 version: $(VERSION)
@@ -239,6 +279,10 @@ major-version: $(VERSION)
 	@/bin/echo -n "New verion:	"
 	@sed -nr 's/$(VERSION_RE)/\2/p' $(VERSION)
 	@rm $(VERSION).prev
+
+
+################################################################################
+# Miscellaneous
 
 # clean up the repo and resources
 .PHONY: clean
