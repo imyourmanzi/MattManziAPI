@@ -13,9 +13,8 @@ ENV MONGO_DBPATH /data/persistent-db
 RUN mkdir -p ${MONGO_DBPATH} && chown -R mongodb:mongodb ${MONGO_DBPATH}
 
 # copy tls resources
-COPY ./x509/ca.pem tls/ca.pem
-COPY ./x509/server.pem tls/server.pem
-COPY ./x509/client.csr tls/client.csr
+COPY ./x509/*.pem tls/
+# COPY ./x509/client.csr tls/client.csr
 
 # copy configuration and setup user
 COPY ./mongo/mongo_conf.yml ./mongod.conf
