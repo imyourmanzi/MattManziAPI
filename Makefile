@@ -96,17 +96,23 @@ vars:
 # run but with debug verbosity
 .PHONY: debug
 debug:
-	@MM_VERBOSITY=debug GODEBUG="x509ignoreCN=0" $(MAKE) run
+	@MM_VERBOSITY=debug $(MAKE) run
 
 # locally run cmds in order
 # (not perfect, if there were more I'd be stuck, but I only have one for now)
+#
+# Note about `GODEBUG=x509ignoreCN=0`: golang decided that CNs were no longer
+# hip and cool, so much so that they're dropping fallback to CN verification.
+# Unfortunately, MongoDB has not updated their Go driver to use SAN verification
+# so until then, we're stuck with this dumb environment variable.
+# See more here: https://github.com/golang/go/issues/39568
 .PHONY: run
 run: services
 	@runCleanup () { \
 		$(MAKE) stop-services; \
 	}; \
 	trap runCleanup EXIT; \
-	go run $(CMD)/main.go
+	GODEBUG=x509ignoreCN=0 go run $(CMD)/main.go
 
 
 ################################################################################
