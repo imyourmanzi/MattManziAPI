@@ -103,7 +103,7 @@ debug:
 .PHONY: run
 run: services
 	@runCleanup () { \
-		$(MAKE) stop-db; \
+		$(MAKE) stop-services; \
 	}; \
 	trap runCleanup EXIT; \
 	go run $(CMD)/main.go
@@ -169,6 +169,11 @@ connect-db: services
 	--authenticationMechanism MONGODB-X509 \
 	--host localhost \
 	mattmanzi_com
+
+.PHONY: stop-services
+stop-services:
+	@cd $(LOCAL_DIR) && \
+	docker-compose -p "$$(cd .. && basename `pwd`)" stop
 
 .PHONY: rm-services
 rm-services:
