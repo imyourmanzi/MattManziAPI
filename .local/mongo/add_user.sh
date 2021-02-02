@@ -20,7 +20,7 @@ echo "add_user.sh::STARTED MONGO"
 
 # retry until we have added our user
 counter=3
-while ! mongo admin --eval 'db.getSiblingDB("$external").runCommand({ createUser: cat("/home/mongodb/new_user", false), roles: [ { role: "readWrite", db: "mattmanzi_com" }, { role: "userAdminAnyDatabase", db: "admin" } ], writeConcern: { w: "majority", wtimeout: 5000 } });'; do
+while ! mongo admin --eval 'db.getSiblingDB("$external").runCommand({ createUser: cat("/home/mongodb/new_user", false), roles: [ { role: "readWrite", db: "mattmanzi_com" } ], writeConcern: { w: "majority", wtimeout: 5000 } });'; do
     echo "add_user.sh::FAILED ONCE (counter $counter)"
     ((counter--))
     if [[ $counter = 0 ]]; then
@@ -38,6 +38,6 @@ mongod --dbpath="${MONGO_DBPATH}" --shutdown
 sleep 3
 
 echo "add_user.sh::CLEANING UP"
-rm /home/mongodb/new_user /home/mongodb/tls/client.pem $0
+rm /home/mongodb/new_user /home/mongodb/tls/client.* $0
 
 echo "add_user.sh::CONTINUING"
