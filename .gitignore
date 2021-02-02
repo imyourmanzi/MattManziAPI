@@ -19,10 +19,11 @@
 /bin/
 
 # Local files for Docker-hosted MongoDB
-.srl
-/.local/
-!/.local/mongo/*
-!/.local/x509/*.conf
+/.local/x509/.srl
+/.local/x509/*.key
+/.local/x509/*.csr
+/.local/x509/*.crt
+/.local/x509/*.pem
 
 # macOS files
 .DS_Store

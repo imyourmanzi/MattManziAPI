@@ -1,0 +1,13 @@
+# File: .local/docker-compose.yml
+# Author: Matt Manzi
+# Created: 2021-02-01
+#
+# Docker Compose configuration to manage the state of needed Docker containers.
+
+version: "3.9"
+services:
+  apidb:
+    build: .
+    image: apidb_image
+    ports:
+      - "27017:27017"

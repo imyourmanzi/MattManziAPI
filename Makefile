@@ -24,6 +24,7 @@ VERSION := $(VERSION_DIR)/version.go
 VERSION_RE := ^(const[[:space:]]+VersionString[[:space:]]+=[[:space:]]+)"(([[:digit:]]+)\.([[:digit:]]+)\.([[:digit:]]+))"$$
 
 CA_CNF := $(CERT_DIR)/ca.conf
+CA_SRL := $(CERT_DIR)/.srl
 CA_KEY := $(CA_CNF:.conf=.key)
 CA_PEM := $(CA_CNF:.conf=.pem)
 
@@ -42,11 +43,6 @@ SERVER_PEM := $(SERVER_CNF:.conf=.pem)
 MONGO_CNF := $(MONGO_DIR)/mongo_conf.yml
 MONGO_USER_SCRIPT := $(MONGO_DIR)/add_user.sh
 MONGO_PORT := 27017
-
-DOCKER_IMAGE_NAME := apidb_image
-DOCKER_CONTAINER_NAME := $(DOCKER_IMAGE_NAME:%_image=%)
-# implies the container and image both exist, does not guarantee state
-DOCKER_LOCK := $(LOCAL_DIR)/.dockermake.lock
 
 # debugging the makefile
 .PHONY: vars
@@ -73,6 +69,7 @@ vars:
 	@echo 'CA_CNF := $(CA_CNF)'
 	@echo 'CA_KEY := $(CA_KEY)'
 	@echo 'CA_PEM := $(CA_PEM)'
+	@echo 'CA_SRL := $(CA_SRL)'
 
 	@echo
 	@echo 'CLIENT_CNF := $(CLIENT_CNF)'
@@ -91,12 +88,6 @@ vars:
 	@echo
 	@echo 'MONGO_CNF := $(MONGO_CNF)'
 	@echo 'MONGO_USER_SCRIPT := $(MONGO_USER_SCRIPT)'
-	@echo 'MONGO_PORT := $(MONGO_PORT) # note: must match mongod config'
-
-	@echo
-	@echo 'DOCKER_IMAGE_NAME := $(DOCKER_IMAGE_NAME)'
-	@echo 'DOCKER_CONTAINER_NAME := $(DOCKER_CONTAINER_NAME)'
-	@echo 'DOCKER_LOCK := $(DOCKER_LOCK)'
 
 
 ################################################################################
@@ -108,103 +99,81 @@ debug:
 	@MM_VERBOSITY=debug GODEBUG="x509ignoreCN=0" $(MAKE) run
 
 # locally run cmds in order
-# (not perfect because if there were more I'd be stuck but I only have for now)
+# (not perfect, if there were more I'd be stuck, but I only have one for now)
 .PHONY: run
-run: start-db
+run: services
 	@runCleanup () { \
 		$(MAKE) stop-db; \
-	}; trap runCleanup EXIT; go run $(CMD)/main.go
+	}; \
+	trap runCleanup EXIT; \
+	go run $(CMD)/main.go
 
 
 ################################################################################
-# Docker MongoDB x509 Certificates
+# MongoDB Configuration and x509 Certificates
+
+$(MONGO_CNF) $(MONGO_USER_SCRIPT):
+	-@$(MAKE) rm-services &> /dev/null
 
 .PHONY: ca
 ca $(CA_KEY) $(CA_PEM): $(CA_CNF)
+	-@$(MAKE) rm-services &> /dev/null
 	@openssl req -x509 \
 	-config $(CA_CNF) -nodes \
 	-newkey rsa -keyout $(CA_KEY) \
 	-out $(CA_PEM) -outform PEM > /dev/null
 
 .PHONY: server-cert
-server-cert $(SERVER_KEY) $(SERVER_CSR) $(SERVER_CRT) $(SERVER_PEM): $(SERVER_CNF) $(SERVER_CNF) $(CA_KEY) $(CA_PEM)
+server-cert $(SERVER_KEY) $(SERVER_CSR) $(SERVER_CRT) $(SERVER_PEM): $(SERVER_CNF) $(CA_KEY) $(CA_PEM)
+	-@$(MAKE) rm-services &> /dev/null
 	@openssl req \
 	-config $(SERVER_CNF) -nodes \
 	-newkey rsa -keyout $(SERVER_KEY) \
 	-out $(SERVER_CSR) > /dev/null
 	@openssl x509 -req -in $(SERVER_CSR) \
-	-CA $(CA_PEM) -CAkey $(CA_KEY) -CAcreateserial \
+	-CA $(CA_PEM) -CAkey $(CA_KEY) -CAcreateserial -CAserial $(CA_SRL) \
 	-out $(SERVER_CRT) > /dev/null
 	@cat $(SERVER_CRT) $(SERVER_KEY) > $(SERVER_PEM)
 
 .PHONY: client-cert
-client-cert $(CLIENT_KEY) $(CLIENT_CSR) $(CLIENT_CRT) $(CLIENT_PEM): $(CLIENT_CNF) $(CLIENT_CNF) $(CA_KEY) $(CA_PEM)
+client-cert $(CLIENT_KEY) $(CLIENT_CSR) $(CLIENT_CRT) $(CLIENT_PEM): $(CLIENT_CNF) $(CA_KEY) $(CA_PEM)
+	-@$(MAKE) rm-services &> /dev/null
 	@openssl req \
 	-config $(CLIENT_CNF) -nodes \
 	-newkey rsa -keyout $(CLIENT_KEY) \
 	-out $(CLIENT_CSR) > /dev/null
 	@openssl x509 -req -in $(CLIENT_CSR) \
-	-CA $(CA_PEM) -CAkey $(CA_KEY) -CAcreateserial \
+	-CA $(CA_PEM) -CAkey $(CA_KEY) -CAcreateserial -CAserial $(CA_SRL) \
 	-out $(CLIENT_CRT) > /dev/null
 	@cat $(CLIENT_CRT) $(CLIENT_KEY) > $(CLIENT_PEM)
 
 .PHONY: rm-certs
 rm-certs:
 	cd $(CERT_DIR) && rm -f $(shell ls -1 $(CERT_DIR) | grep -v .conf)
-	rm -f .srl
+	rm -f $(CA_SRL)
 
 
 ################################################################################
-# Docker MongoDB Management
-#
-# If `make start-db` fails even after a `make rm-db`, check if there are extra
-# Docker containers or images that are blocking this one but are not detected by
-# the Makefile.
+# Docker Container Management
 
-.PHONY: new-db
-new-db $(DOCKER_LOCK): $(MONGO_CNF) $(MONGO_USER_SCRIPT) $(CA_PEM) $(SERVER_PEM) $(CLIENT_PEM) Dockerfile
-	@if docker images --format '{{.Repository}}' | grep -q $(DOCKER_IMAGE_NAME); \
-	then \
-		$(MAKE) rm-db; \
-	fi
-	@docker build -t $(DOCKER_IMAGE_NAME) .
-	@docker create -p $(MONGO_PORT):$(MONGO_PORT)/tcp --name $(DOCKER_CONTAINER_NAME) $(DOCKER_IMAGE_NAME) > /dev/null
-	@touch $(DOCKER_LOCK)
+.PHONY: services
+services: $(CA_PEM) $(SERVER_PEM) $(CLIENT_PEM) $(MONGO_CNF) $(MONGO_USER_SCRIPT)
+	@cd $(LOCAL_DIR) && \
+	docker-compose -p "$$(cd .. && basename `pwd`)" up -d
+	@sleep 2
 
-.PHONY: start-db
-start-db: $(DOCKER_LOCK)
-	@if docker container ls --format '{{.Names}}' | grep -q $(DOCKER_CONTAINER_NAME); \
-	then \
-		echo "Database already up"; \
-		exit 2; \
-	fi
-	@/bin/echo -n "Starting local database..."
-	@docker start $(DOCKER_CONTAINER_NAME) > /dev/null
-	@sleep 3
-	@echo "OK"
-
-# connect to the database as the api user
-# or from in container:
-# mongo --tls --tlsCertificateKeyFile tls/client.pem --tlsCAFile tls/ca.pem --authenticationDatabase '$external' --authenticationMechanism MONGODB-X509 --host localhost:27017 mattmanzi_com
 .PHONY: connect-db
-connect-db: $(DOCKER_LOCK)
-	@mongo --tls --tlsCertificateKeyFile $(CLIENT_PEM) --tlsCAFile $(CA_PEM) --authenticationDatabase '$$external' --authenticationMechanism MONGODB-X509 --host localhost:$(MONGO_PORT) mattmanzi_com
+connect-db: services
+	@mongo --tls --tlsCertificateKeyFile $(CLIENT_PEM) --tlsCAFile $(CA_PEM) \
+	--authenticationDatabase '$$external' \
+	--authenticationMechanism MONGODB-X509 \
+	--host localhost \
+	mattmanzi_com
 
-.PHONY: stop-db
-stop-db: $(DOCKER_LOCK)
-	@/bin/echo -n "Stopping local database..."
-	-@docker stop $(DOCKER_CONTAINER_NAME) &> /dev/null
-	@echo "done"
-
-.PHONY: rm-db
-rm-db:
-	@if docker container ls --format '{{.Names}}' | grep -q $(DOCKER_CONTAINER_NAME); \
-	then \
-		$(MAKE) stop-db; \
-	fi
-	docker rm -f $(DOCKER_CONTAINER_NAME)
-	docker rmi -f $(DOCKER_IMAGE_NAME)
-	rm -f $(DOCKER_LOCK)
+.PHONY: rm-services
+rm-services:
+	cd $(LOCAL_DIR) && \
+	docker-compose -p "$$(cd .. && basename `pwd`)" down --rmi all
 
 
 ################################################################################
@@ -286,4 +255,4 @@ major-version: $(VERSION)
 
 # clean up the repo and resources
 .PHONY: clean
-clean: rm-bin test-clean rm-db rm-certs
+clean: rm-bin test-clean rm-services rm-certs

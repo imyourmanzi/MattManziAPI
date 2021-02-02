@@ -1,4 +1,4 @@
-# File: Dockerfile
+# File: .local/Dockerfile
 # Author: Matt Manzi
 # Created: 2021-01-26
 #
@@ -13,13 +13,13 @@ ENV MONGO_DBPATH /data/persistent-db
 RUN mkdir -p ${MONGO_DBPATH} && chown -R mongodb:mongodb ${MONGO_DBPATH}
 
 # copy tls resources
-COPY ./.local/x509/ca.pem tls/ca.pem
-COPY ./.local/x509/server.pem tls/server.pem
-COPY ./.local/x509/client.pem tls/client.pem
+COPY ./x509/ca.pem tls/ca.pem
+COPY ./x509/server.pem tls/server.pem
+COPY ./x509/client.csr tls/client.csr
 
 # copy configuration and setup user
-COPY ./.local/mongo/mongo_conf.yml ./mongod.conf
-COPY ./.local/mongo/add_user.sh ./add_user.sh
+COPY ./mongo/mongo_conf.yml ./mongod.conf
+COPY ./mongo/add_user.sh ./add_user.sh
 
 # cleanup installation permissions
 RUN chmod +x ./add_user.sh && ./add_user.sh

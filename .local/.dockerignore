@@ -1,4 +1,4 @@
-# File: .dockerignore
+# File: .local/.dockerignore
 # Author: Matt Manzi
 # Created: 2021-01-26
 #
@@ -8,8 +8,10 @@
 *
 
 ## except container-related files:
-# - mongo configuration
-!.local/mongo
 
-# - ca, server, client certificates
-!.local/x509/*.pem
+# - mongo configuration
+!mongo
+
+# - ca, server, certificates;  client csr
+!x509/*.pem
+!x509/client.csr
